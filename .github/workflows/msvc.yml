@@ -1,0 +1,49 @@
+name: msvc
+
+on:
+  push:
+    branches: [ main ]
+        
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg/packages
+            ${{ github.workspace }}/vcpkg/downloads
+            ${{ github.workspace }}/vcpkg/buildtrees
+            ${{ github.workspace }}/build
+          key: ${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+
+      - name: vcpkg setup
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git --depth 1 ${{ env.VCPKG_ROOT }}
+          .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: MSVC config
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: CMake config
+        run: |
+          cmake --preset release -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+
+      - name: CMake build
+        run: |
+          cmake --build build/release
+
+      - name: Save artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-artefact
+          path: build/release/skylua.dll

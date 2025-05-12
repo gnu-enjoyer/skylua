@@ -1,0 +1,8 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+PointerAlignment: Left
+FixNamespaceComments: false
+CompactNamespaces: true
+ColumnLimit: 100
+...
