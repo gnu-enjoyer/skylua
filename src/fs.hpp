@@ -56,9 +56,11 @@ class LuaFile {
 
   friend bool operator==(const LuaFile&, const LuaFile&) = default;
 
-  static std::vector<LuaFile> GetLuaFilesOnDisk(const std::filesystem::path& root) {
-    return GetFilesOnDisk(root) | std::views::filter([](const std::filesystem::path& path) {
-             return path.has_relative_path();
+  static std::vector<LuaFile> GetLuaFilesOnDisk(
+      const std::filesystem::path& root, const std::unordered_set<std::string>& ignore_list = {}) {
+    return GetFilesOnDisk(root) |
+           std::views::filter([&ignore_list](const std::filesystem::path& path) {
+             return !ignore_list.contains(path.filename().string()) && path.has_relative_path();
            }) |
            std::views::transform(
                [](const std::filesystem::path& path) { return LuaFile{path.string()}; }) |
@@ -76,6 +78,7 @@ typedef std::unordered_set<LuaFile, LuaFileHash> HotReloadCallback;
 
 template <RetryMethod M>
 class HotReloader {
+  std::unordered_set<std::string> ignore_list;
   HotReloadCallback paths_buffer;
   HANDLE fd = nullptr;
 
@@ -90,7 +93,8 @@ class HotReloader {
         auto p_notify = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer);
         std::filesystem::path updated_path(p_notify->FileName);
 
-        if (updated_path.extension() == ".lua") {
+        if (updated_path.extension() == ".lua" &&
+            !ignore_list.contains(updated_path.filename().string())) {
           auto [_, success] = paths_buffer.emplace(LuaFile{updated_path.string()});
           if (success) {
             SKSE::GetTaskInterface()->AddTask([&f, cb = paths_buffer] {
@@ -115,7 +119,7 @@ class HotReloader {
     }
   }
 
-  HotReloader() {
+  explicit HotReloader(const std::unordered_set<std::string>& ignored = {}) : ignore_list(ignored) {
     fd = CreateFile(FindOrCreateDirectory<Destination::RUNTIME>().c_str(), FILE_LIST_DIRECTORY,
                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
                     FILE_FLAG_BACKUP_SEMANTICS, NULL);

@@ -7,16 +7,17 @@ skylua glues LuaJIT via sol2 and CommonLibSSE NG to provide an embedded, fast an
 * Lua 5.1 (JIT)
   * bitwise support
 - hot reload
+- auto complete
 
-## example
+https://github.com/user-attachments/assets/40409424-91d4-40e8-af5f-a9a8acf84edf
 
-```lua
-function SkyLua.OnTick()
-  SkyLua.notify("hello world")
-end
-```
+## quick start
+
+1. dl latest release and place `skylua.dll` in `<path to skyrim>/SKSE/Plugins/`
+2. skylua runs .lua files in `<path to skyrim>/SkyLua`
+3. (optional) lua definitions can be placed in `./SkyLua/types/skylua.lua`
 
 ## requirements
 
-- SKSE to load .dll
-
+- SKSE
+- Address Library for SKSE

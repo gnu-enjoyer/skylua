@@ -14,6 +14,7 @@ struct Config {
   std::uint64_t tick_rate{1000};
   bool enable_hot_reload{true};
   LuaLibs lua_libs{LuaLibs::DEFAULT};
+  std::unordered_set<std::string> ignored_filenames{"skylua.lua"};
 };
 
 static const Config* LoadOrDefault(bool force_reload = false) {

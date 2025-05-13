@@ -8,7 +8,7 @@
 
 auto BootstrapLua() {
   auto dir = fs::FindOrCreateDirectory<fs::Destination::RUNTIME>();
-  auto lua_files = fs::LuaFile::GetLuaFilesOnDisk(dir);
+  auto lua_files = fs::LuaFile::GetLuaFilesOnDisk(dir, cfg::LoadOrDefault()->ignored_filenames);
 
   for (auto& i : lua_files) {
     ecs::AddLuaFileToRegistry(i);
@@ -42,8 +42,10 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {
       BootstrapLua();
       cfg::LoadOrDefault()->enable_hot_reload
-          ? fs::HotReloader<fs::RetryMethod::LOOP>::DetachWithCallback(CallBack)
-          : fs::HotReloader<fs::RetryMethod::NONE>().await(CallBack);
+          ? fs::HotReloader<fs::RetryMethod::LOOP>(cfg::LoadOrDefault()->ignored_filenames)
+                .DetachWithCallback(CallBack)
+          : fs::HotReloader<fs::RetryMethod::NONE>(cfg::LoadOrDefault()->ignored_filenames)
+                .await(CallBack);
     }
   });
 
